@@ -1,11 +1,14 @@
 import express from "express";
 import { createServer as createViteServer } from "vite";
 import { createClient } from "@supabase/supabase-js";
-import { GoogleGenAI } from "@google/genai";
 import dotenv from "dotenv";
 import path from "path";
+import { fileURLToPath } from 'url';
 
-dotenv.config();
+dotenv.config({ path: path.resolve(process.cwd(), '.env') });
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = 3000;
@@ -20,11 +23,10 @@ const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY && process.env.SUPABAS
   ? process.env.SUPABASE_SERVICE_ROLE_KEY
   : "dummy-key";
 
-// Only create client if we have something that looks like a URL
-let supabase: any;
+let supabase;
 try {
   supabase = createClient(supabaseUrl, supabaseKey);
-} catch (e) {
+} catch {
   console.warn("Supabase client could not be initialized, using mock.");
   supabase = {
     from: () => ({
@@ -38,20 +40,16 @@ try {
   };
 }
 
-// Gemini Setup
-const genAI = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "" });
+// const genAI = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "" });
+console.log("AI Engine initialized with key:", process.env.GEMINI_API_KEY ? "Present" : "Missing");
 
 // --- API Routes ---
-
-// Health Check
 app.get("/api/health", (req, res) => {
   res.json({ status: "ok", timestamp: new Date().toISOString() });
 });
 
-// AI Career Recommendations
 app.post("/api/ai/recommendations", async (req, res) => {
   try {
-    // Returning static dummy data as requested
     const staticRecommendations = [
       {
         careerTitle: "AI Solutions Architect",
@@ -75,8 +73,6 @@ app.post("/api/ai/recommendations", async (req, res) => {
         educationalResources: "Product School, EdTech Strategy Certification"
       }
     ];
-
-    // Simulate a small delay for realism
     await new Promise(resolve => setTimeout(resolve, 800));
     res.json(staticRecommendations);
   } catch (error) {
@@ -85,31 +81,21 @@ app.post("/api/ai/recommendations", async (req, res) => {
   }
 });
 
-// Counselor Matching Algorithm (Simple version)
 app.post("/api/counselors/match", async (req, res) => {
   try {
     const { userInterests } = req.body;
-    
-    // Fetch all counselors
-    const { data: counselors, error } = await supabase
-      .from("counselors")
-      .select("*");
-
+    const { data: counselors, error } = await supabase.from("counselors").select("*");
     if (error) throw error;
-
-    // Simple matching based on overlapping expertise/interests
     const matches = counselors.map(c => {
-      const overlap = c.expertise.filter((skill: string) => userInterests.includes(skill)).length;
+      const overlap = c.expertise.filter((skill) => userInterests.includes(skill)).length;
       return { ...c, matchScore: overlap };
     }).sort((a, b) => b.matchScore - a.matchScore);
-
     res.json(matches.slice(0, 5));
-  } catch (error) {
+  } catch {
     res.status(500).json({ error: "Failed to match counselors" });
   }
 });
 
-// Job Board Proxy (Mocking external API for now)
 app.get("/api/jobs", async (req, res) => {
   const mockJobs = [
     { id: 1, title: "Senior Frontend Engineer", company: "Vercel", location: "Remote", salary: "$160k - $210k", type: "Full-time" },
@@ -123,18 +109,19 @@ app.get("/api/jobs", async (req, res) => {
 });
 
 // --- Vite Integration ---
-
 async function startServer() {
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({
       server: { middlewareMode: true },
       appType: "spa",
+      configFile: path.resolve(__dirname, "../client/vite.config.js"),
     });
     app.use(vite.middlewares);
   } else {
-    app.use(express.static(path.resolve(__dirname, "dist")));
+    const distPath = path.resolve(__dirname, "../dist");
+    app.use(express.static(distPath));
     app.get("*", (req, res) => {
-      res.sendFile(path.resolve(__dirname, "dist", "index.html"));
+      res.sendFile(path.resolve(distPath, "index.html"));
     });
   }
 

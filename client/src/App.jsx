@@ -1,6 +1,6 @@
-import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider, useAuth } from './context/AuthContext';
+import { AuthProvider } from './context/AuthContext';
+import { useAuth } from './context/useAuth';
 import { Navbar } from './components/Navbar';
 import { Dashboard } from './pages/Dashboard';
 import { Counselors } from './pages/Counselors';
@@ -8,8 +8,7 @@ import { JobBoard } from './pages/JobBoard';
 import { LoginPage } from './pages/LoginPage';
 import { CareerPathViz } from './components/CareerPathViz';
 
-// Placeholder for missing pages
-const Placeholder = ({ title }: { title: string }) => (
+const Placeholder = ({ title }) => (
   <div className="flex items-center justify-center min-h-[60vh]">
     <div className="text-center">
       <h1 className="text-2xl font-bold text-zinc-900 mb-2">{title}</h1>
@@ -24,7 +23,7 @@ const AppContent = () => {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-zinc-50">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-600"></div>
       </div>
     );
   }
