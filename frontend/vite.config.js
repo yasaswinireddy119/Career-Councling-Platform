@@ -8,7 +8,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 export default defineConfig(({ mode }) => {
-  const env = loadEnv(mode, '..', ''); // Load env from root
+  const env = loadEnv(mode, process.cwd(), ''); // Load env from root
   return {
     root: path.resolve(__dirname, '.'),
     plugins: [react(), tailwindcss()],
@@ -21,7 +21,7 @@ export default defineConfig(({ mode }) => {
       },
     },
     build: {
-      outDir: '../dist',
+      outDir: 'dist',
       emptyOutDir: true,
     },
     server: {
